@@ -93,15 +93,16 @@ class DataManager:
                 artist_id = album['artists'][0]['id']
                 album_genre = sp.artist(artist_id)['genres']
                 realese_date = album['release_date']
-                album_img = album['images'][0]['url'] #imagen de album
+                album_img = album['images'][0]['url'] 
                 album_link = album['external_urls']['spotify']
                 artist_link = album['artists'][0]['external_urls']['spotify']
+
 
                 #Quitar las comillas 
                 album_name = album_name.replace("'", "")
                 #Separar el género por coma
                 album_genre = ', '.join(album_genre)
-                #Agregamos una fecha de modificacion 
+                #Agregamos una fecha de carga de datos 
                 now = datetime.date.today().strftime('%Y-%m-%d')
 
                 data['Id'].append(id)
@@ -127,10 +128,20 @@ class DataManager:
         try:
             logging.info('Data to Pandas Dataframe')
             data = self.data_extract()
-            df=pd.DataFrame(data)
-           
             
-            return df
+            df = pd.DataFrame(data)
+            #Evitar que haya duplicadas
+            df.drop_duplicates(subset=['Album_name', 'Artis_name'], keep='first', inplace=True)
+            #Reemplazar valores nulos o vacios en el campo Género por Desconocido
+            df['Album_genre'].fillna('Desconocido', inplace=True)
+            df.loc[df['Album_genre'] == '', 'Album_genre'] = 'Desconocido'
+           
+            #Verificar que la fecha se muestre en formato fecha 
+            df['Realese_date'] = pd.to_datetime(df['Realese_date'], format='%Y-%m-%d')
+            df['Realese_date'] = df['Realese_date'].dt.strftime('%Y-%m-%d')
+
+            return(df)
+            
         
         except Exception as e:
             logging.error(e)
