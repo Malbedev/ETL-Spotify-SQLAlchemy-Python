@@ -1,6 +1,6 @@
 
 import os
-from modules import DataManager , DataConn
+from modules import DataManager, DataConn
 from dotenv import load_dotenv
 
 load_dotenv()
