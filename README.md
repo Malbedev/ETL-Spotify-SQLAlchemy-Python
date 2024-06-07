@@ -1,4 +1,4 @@
-# <span style="color:orange"> Spotify's "New Releases" : ETL Project</span>
+# Spotify's "New Releases" : ETL Project
 
 ## Descripción
 -------------------
