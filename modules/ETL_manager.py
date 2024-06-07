@@ -5,7 +5,8 @@ import logging
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import datetime
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine,Column,String,Date
+from sqlalchemy.ext.declarative import declarative_base
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -23,6 +24,7 @@ class DataConn:
         self.config = config
         self.schema = schema
         self.db_engine = None
+        self.Base= declarative_base()
 
 
     def get_conn(self):
@@ -32,7 +34,7 @@ class DataConn:
         port = self.config.get('REDSHIFT_PORT', '5439')
         dbname = self.config.get('REDSHIFT_DBNAME')
 
-        # Construct the connection URL
+    # Construimos la conexion
         connection_url = f"postgresql+psycopg2://{username}:{password}@{host}:{port}/{dbname}"
         self.db_engine = create_engine(connection_url)
 
@@ -46,6 +48,36 @@ class DataConn:
             logging.error(f"Failed to create connection: {e}")
             raise
 
+    #creamos un tabla con SqlAlquemy
+    
+    def create_table(self,table):
+        try: 
+            logging.info("Creating table....")
+            schema=self.schema
+            class MyTable(self.Base):
+                __tablename__= table 
+                __table_args__ = {'schema':schema}
+
+                Id = Column(String(50))
+                Album_type = Column(String(50))
+                Album_name= Column(String(50))
+                Artist_name = Column(String(50))
+                Total_tracks= Column(String(50))
+                Album_genre  = Column(String(500))
+                Realese_date = Column(String)
+                Album_img = Column(String(200))
+                Album_link = Column(String(200))
+                Artist_link = Column(String(200))
+                Load_date = Column(String)
+
+        except Exception as e:
+            logging.warn(e)
+
+    def create_all_tables(self):
+        self.Base.metadata.create_all(self.db_engine)
+        logging.info(f" Table created! ")
+
+    # Cargamos la data en nuestra tabla 
     def upload_data(self, data: pd.DataFrame, table: str):
         try:
             data.to_sql(
@@ -61,6 +93,7 @@ class DataConn:
             logging.error(f"Failed to upload data to {self.schema}.{table}: {e}")
             raise
 
+    # cerramos la conexion
     def close_conn(self):
         if self.db_engine:
             self.db_engine.dispose()
@@ -73,6 +106,7 @@ class DataManager:
     def __init__(self):
         self.data = None
 
+    # Extraemos la data de la Api
     def data_extract(self):
        
         try:
@@ -83,7 +117,7 @@ class DataManager:
             sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
             results = sp.new_releases(limit=50)
 
-            data = {'Id': [],'Album_type': [], 'Album_name': [],'Artis_name': [],'Total_tracks': [],'Album_genre':[], 'Realese_date': [], 'Album_img': [],'Album_link':[],'Artist_link':[],'Load_date': []}
+            data = {'Id': [],'Album_type': [], 'Album_name': [],'Artist_name': [],'Total_tracks': [],'Album_genre':[], 'Realese_date': [], 'Album_img': [],'Album_link':[],'Artist_link':[],'Load_date': []}
             for album in results['albums']['items']:
                 id = album['id']
                 album_type = album['album_type']
@@ -108,7 +142,7 @@ class DataManager:
                 data['Id'].append(id)
                 data['Album_type'].append(album_type)
                 data['Album_name'].append(album_name)
-                data['Artis_name'].append(artist_name)
+                data['Artist_name'].append(artist_name)
                 data['Total_tracks'].append(total_tracks)
                 data['Album_genre'].append(album_genre)
                 data['Realese_date'].append(realese_date)
@@ -118,20 +152,20 @@ class DataManager:
                 data['Load_date'].append(now)
 
             return data
-            
+                  
         except Exception as e:
             logging.error(e)
         finally:
             logging.warn("Check the data format")
 
+    #trasformamos la data con pandas
     def data_transform(self):
         try:
-            logging.info('Data to Pandas Dataframe')
             data = self.data_extract()
-            
+            logging.info('Data to Pandas Dataframe')
             df = pd.DataFrame(data)
             #Evitar que haya duplicadas
-            df.drop_duplicates(subset=['Album_name', 'Artis_name'], keep='first', inplace=True)
+            df.drop_duplicates(subset=['Album_name', 'Artist_name'], keep='first', inplace=True)
             #Reemplazar valores nulos o vacios en el campo Género por Desconocido
             df['Album_genre'].fillna('Desconocido', inplace=True)
             df.loc[df['Album_genre'] == '', 'Album_genre'] = 'Desconocido'

@@ -13,13 +13,16 @@ user_credentials = {
     "REDSHIFT_DBNAME" : os.getenv('REDSHIFT_DBNAME')
 }
 
+table='stage_spotify_new_releases_table'
 schema = "mauroalberelli_coderhouse"
 data_conn = DataConn(user_credentials, schema)
 SpotifyApi = DataManager()
 
 try:
     data_conn.get_conn()
+    data_conn.create_table(table)
+    data_conn.create_all_tables()
     data=SpotifyApi.data_transform()
-    data_conn.upload_data(data,'stage_spotify_new_releases_table')
+    data_conn.upload_data(data,table)
 finally:
     data_conn.close_conn()
