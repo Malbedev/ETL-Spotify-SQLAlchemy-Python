@@ -5,7 +5,7 @@ import logging
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import datetime
-from sqlalchemy import create_engine,Column,String,Date
+from sqlalchemy import create_engine,Column,String,NVARCHAR,Date,Integer
 from sqlalchemy.ext.declarative import declarative_base
 from dotenv import load_dotenv
 load_dotenv()
@@ -58,17 +58,17 @@ class DataConn:
                 __tablename__= table 
                 __table_args__ = {'schema':schema}
 
-                Id = Column(String(50))
-                Album_type = Column(String(50))
-                Album_name= Column(String(50))
-                Artist_name = Column(String(50))
-                Total_tracks= Column(String(50))
-                Album_genre  = Column(String(500))
-                Realese_date = Column(String)
-                Album_img = Column(String(200))
-                Album_link = Column(String(200))
-                Artist_link = Column(String(200))
-                Load_date = Column(String)
+                Id = Column(NVARCHAR(50),primary_key=True)
+                Album_type = Column(NVARCHAR(50))
+                Album_name= Column(NVARCHAR(50))
+                Artist_name = Column(NVARCHAR(50))
+                Total_tracks= Column(Integer)
+                Album_genre  = Column(NVARCHAR(500))
+                Realese_date = Column(Date)
+                Album_img = Column(NVARCHAR(200))
+                Album_link = Column(NVARCHAR(200))
+                Artist_link = Column(NVARCHAR(200))
+                Load_date = Column(Date)
 
         except Exception as e:
             logging.warn(e)
